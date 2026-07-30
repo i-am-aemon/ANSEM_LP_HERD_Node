@@ -10,7 +10,8 @@
 
 You keep the key. No bot required — [site](https://www.ansemlp.fun) · [whitepaper](https://www.ansemlp.fun/whitepaper). This node = advanced multi-pool cell.
 
-**Fork:** [ANSEM_LP_HERD_Node](https://github.com/i-am-aemon/ANSEM_LP_HERD_Node) · private working cell is not a fork target.
+**Fork:** [ANSEM_LP_HERD_Node](https://github.com/i-am-aemon/ANSEM_LP_HERD_Node) · private working cell is not a fork target.  
+**v2 plan:** [V2.md](./V2.md) — download-and-run private node goals.
 
 ## Start
 
