@@ -36,6 +36,13 @@ export function getSetupChecklist() {
       hint: 'Railway Variables or local .env. Never paste a private key in the browser.',
     },
     {
+      n: 1.5,
+      id: 'single-wallet',
+      title: 'Single-wallet: OPERATOR_PRIVATE_KEY = LP_PRIVATE_KEY',
+      done: single || (!hasLp && !keys.lp?.present),
+      hint: 'Stranger path: one key does LP + operator. Copy both lines in .env.example.',
+    },
+    {
       n: 2,
       id: 'controller',
       title: 'Controller = @i_am_aemon map book (hardcoded)',

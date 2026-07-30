@@ -12,14 +12,15 @@ Node ≥ 22. After `npm run start` → http://127.0.0.1:8080/
 | `logs/tx.sqlite` | Tx ledger |
 | `logs/tx.jsonl` | Mirror |
 
-## Steps
+## Steps (stranger / download-and-run)
 
 1. `npm install` · `cp .env.example .env` · set **real** keys + password · `chmod 600 .env`
-2. Single-wallet: set `OPERATOR_PRIVATE_KEY` to the **same** value as `LP_PRIVATE_KEY` for live fee legs
-3. `npm run start` → `/unlock` → Setup `/` → Save → fund LP (≥ 0.05 SOL operating)
-4. `/run` → MODE (cover/mirror/ape/hold) → **▶ Start** (continuous until Shut down)
-5. Optional headless check: `npm run doctor` · `npm run dry` (dry has **no** dashboard)
-6. Live spend: `DRY_RUN=false` `SIMULATION_MODE=false`
+2. **Single-wallet (recommended):** set `OPERATOR_PRIVATE_KEY` (and optional `OPERATOR_WALLET`) to the **same** values as LP
+3. Optional: copy hub-exported `cell.json` from ansemlp.fun `/nodes` into this folder (wallets stay empty — keys only in `.env`)
+4. `npm run doctor` · `npm run go-live-check` · `npm run dry`
+5. `npm run start` → `/unlock` → Setup `/` → Save → fund LP (≥ 0.05 SOL operating)
+6. `/run` → MODE → **▶ Start**
+7. Live spend only after dry ticks look sane: `DRY_RUN=false` `SIMULATION_MODE=false`
 
 HERD go-live: paste `HERD_MINT` + `HERD_POOL` on Setup → Save. Env hot-applies; HERD gets a pin + target. No restart.
 

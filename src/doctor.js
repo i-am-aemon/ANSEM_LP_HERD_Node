@@ -29,12 +29,19 @@ async function main() {
   });
   checks.push({
     name: 'OPERATOR_WALLET (W2)',
-    ok: true,
+    ok:
+      Boolean(config.operatorWallet) ||
+      !config.lpPrivateKey ||
+      !isLive(),
     detail: config.operatorWallet
       ? config.isSingleWallet
         ? `${config.operatorWallet} (single-wallet = LP)`
         : config.operatorWallet
-      : 'unset — needed for buy+send (or set = LP)',
+      : config.lpPrivateKey
+        ? isLive()
+          ? 'FAIL — set OPERATOR_PRIVATE_KEY=LP_PRIVATE_KEY (single-wallet) before live'
+          : 'unset — before live set OPERATOR_PRIVATE_KEY=LP_PRIVATE_KEY (see .env.example)'
+        : 'unset — for live, set OPERATOR_* = LP (see .env.example)',
   });
   checks.push({
     name: 'seeder policy',
@@ -365,7 +372,11 @@ async function main() {
   // Soft fail: only hard-fail on routes / tracked wallet / key mismatch
   // Soft: old book / SOL balances are informational. Hard: routes, tracked wallet, key mismatch.
   const hard = checks.filter(
-    (c) => !c.ok && ['routes', 'TRACKED_WALLET (RO)', 'keys'].includes(c.name),
+    (c) =>
+      !c.ok &&
+      ['routes', 'TRACKED_WALLET (RO)', 'keys', 'OPERATOR_WALLET (W2)'].includes(
+        c.name,
+      ),
   );
   const failed = hard.length;
   console.log(

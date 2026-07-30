@@ -10,6 +10,7 @@
   "scripts": {
     "init": "node scripts/init.mjs",
     "doctor": "node src/doctor.js",
+    "go-live-check": "node scripts/go-live-check.mjs",
     "prestart": "node scripts/kill-port.mjs 8080",
     "start": "node src/index.js",
     "once": "MANUAL=true node src/index.js",
