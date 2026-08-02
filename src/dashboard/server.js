@@ -8,6 +8,7 @@ import {
   scaffoldSecretsFile,
   keyFileStatus,
   generateWalletKeypairs,
+  existingKeysPresent,
 } from '../secrets.js';
 import {
   checkNodeAuth,
@@ -15,6 +16,7 @@ import {
   passwordConfigured,
   createSessionToken,
   sessionCookieHeader,
+  isPublicDashboardSurface,
 } from '../lib/node-auth.js';
 import { renderUnlock } from './pages-unlock.js';
 import { buildPortfolio } from '../lib/portfolio.js';
@@ -1151,6 +1153,9 @@ export function startDashboard({ onTick } = {}) {
       }
 
       if (pathname === '/api/pool-plan') {
+        if (req.method === 'POST') {
+          if (!requireAuth(req, res)) return;
+        }
         const wallet =
           (url.searchParams.get('wallet') || '').trim() || config.lpWallet;
         let body = {};
@@ -1458,9 +1463,22 @@ export function startDashboard({ onTick } = {}) {
         }
         if (!requireAuth(req, res)) return;
         const body = await readBody(req);
+        const already = existingKeysPresent();
+        if (already && body.confirm !== 'REGEN') {
+          return json(res, 409, {
+            ok: false,
+            existing: true,
+            error:
+              'keys already exist — send {"confirm":"REGEN","force":true} to overwrite (creates .bak first; orphaning old funds is irreversible)',
+          });
+        }
         const result = generateWalletKeypairs({
           includeMain: body.includeMain !== false,
+          force: already ? true : Boolean(body.force),
         });
+        if (result.ok === false) {
+          return json(res, 409, result);
+        }
         return json(res, 200, { ok: true, ...result });
       }
 
@@ -1727,6 +1745,13 @@ export function startDashboard({ onTick } = {}) {
 
   const host = config.dashboardHost || '127.0.0.1';
   const port = config.dashboardPort || 8080;
+  if ((typeof isPublicDashboardSurface === 'function' ? isPublicDashboardSurface() : (host === '0.0.0.0' || host === '::')) && !(typeof passwordConfigured === 'function' ? passwordConfigured() : false)) {
+    console.error(
+      '[dashboard] FATAL: refusing to bind public control surface without DASHBOARD_PASSWORD. ' +
+        'Set DASHBOARD_PASSWORD (or NODE_PASSWORD), or bind DASHBOARD_HOST=127.0.0.1.',
+    );
+    return null;
+  }
   server.listen(port, host, () => {
     console.log(`[dashboard] http://${host}:${port}/`);
     console.log(`[dashboard] /config  /run  /whitepaper  /health`);

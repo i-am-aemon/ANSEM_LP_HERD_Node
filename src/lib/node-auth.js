@@ -29,6 +29,17 @@ export function passwordConfigured() {
   return Boolean(getDashboardPassword());
 }
 
+/** True when dashboard is (or will be) reachable beyond loopback. */
+export function isPublicDashboardSurface(cfg = config) {
+  const host = String(cfg.dashboardHost || process.env.DASHBOARD_HOST || '127.0.0.1').trim();
+  if (host === '0.0.0.0' || host === '::' || host === '[::]') return true;
+  if (host && host !== '127.0.0.1' && host !== 'localhost' && host !== '::1') return true;
+  if (process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID) return true;
+  const lock = String(process.env.CONTROL_LOCK || '').toLowerCase();
+  if (lock === '1' || lock === 'true' || lock === 'yes' || lock === 'on') return true;
+  return false;
+}
+
 function signingSecret() {
   return getDashboardPassword() || 'ansem-unlocked';
 }
@@ -113,13 +124,25 @@ export function getHeaderToken(req) {
   return String(h || '').trim();
 }
 
-/** Session cookie OR header matching DASHBOARD_PASSWORD. */
+/**
+ * Session cookie OR header matching DASHBOARD_PASSWORD.
+ * Fail-closed on public surfaces: no password ⇒ locked (not everyone authorized).
+ * Local loopback with no password still auto-unlocks for operator convenience.
+ */
 export function checkNodeAuth(req) {
   const expected = getDashboardPassword();
   if (!expected) {
+    if (isPublicDashboardSurface()) {
+      return {
+        ok: false,
+        reason: 'locked — set DASHBOARD_PASSWORD (required on public hosts)',
+        unlocked: false,
+        passwordRequired: true,
+      };
+    }
     return {
       ok: true,
-      reason: 'no password configured',
+      reason: 'no password configured (loopback)',
       unlocked: true,
       passwordRequired: false,
     };

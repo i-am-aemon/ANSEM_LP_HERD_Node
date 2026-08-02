@@ -375,12 +375,25 @@ export function saveCellJson(patch) {
   return next;
 }
 
+/** Reject newline injection and non-env key names before writing .env. */
+export function assertSafeEnvPair(key, value) {
+  const k = String(key || '');
+  if (!/^[A-Z][A-Z0-9_]*$/.test(k)) {
+    throw new Error(`unsafe env key rejected: ${k}`);
+  }
+  const v = value == null ? '' : String(value);
+  if (v.includes('\n') || v.includes('\r')) {
+    throw new Error(`unsafe env value for ${k}: newlines not allowed`);
+  }
+  return { key: k, value: v };
+}
+
 export function upsertEnvKeys(pairs) {
   const envPath = path.join(ROOT, '.env');
   let text = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
-  for (const [key, value] of Object.entries(pairs)) {
-    const v = value == null ? '' : String(value);
-    const line = `${key}=${v}`;
+  for (const [rawKey, rawValue] of Object.entries(pairs)) {
+    const { key, value } = assertSafeEnvPair(rawKey, rawValue);
+    const line = `${key}=${value}`;
     const re = new RegExp(`^${key}=.*$`, 'm');
     if (re.test(text)) {
       text = text.replace(re, line);
@@ -388,8 +401,8 @@ export function upsertEnvKeys(pairs) {
       text = text.trimEnd() + `\n${line}\n`;
     }
     // Hot-apply so ranking/seed see CA without restart
-    process.env[key] = v;
+    process.env[key] = value;
   }
-  fs.writeFileSync(envPath, text.endsWith('\n') ? text : text + '\n');
+  fs.writeFileSync(envPath, text.endsWith('\n') ? text : text + '\n', { mode: 0o600 });
   reloadConfig();
 }
